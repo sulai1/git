@@ -3,8 +3,8 @@ package forms;
 import java.io.File;
 import java.time.LocalDate;
 
+import application.MainWindow;
 import fx.controll.Form;
-import fx.controll.TextSupplier;
 import fx.property.ValueSupplier;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -21,19 +21,23 @@ import structs.Account;
 
 public class AccountForm extends Form<Account> {
 
-	public AccountForm(long id) {
-		this(id, "", "", "", LocalDate.now());
+	public AccountForm(MainWindow window, long id) {
+		this(window, id, "", "", "", LocalDate.now());
 	}
 
-	public AccountForm(Account account) {
+	public AccountForm(MainWindow window, Account account) {
+		this(window,account, true);
+	}
+
+	public AccountForm(MainWindow window, Account account, boolean bMandatory) {
 		setResizable(true);
-		TextSupplier fname = new TextSupplier();
-		TextSupplier lname = new TextSupplier();
-		TextSupplier note = new TextSupplier();
+		ZTextField fname = new ZTextField(window.preferences());
+		ZTextField lname = new ZTextField(window.preferences());
+		ZTextField note = new ZTextField(window.preferences());
 		fname.getProperty().set(account.getFirstname());
 		lname.getProperty().set(account.getLastname());
 		note.getProperty().set(account.getNotes());
-		disableSubmit(true);
+		disableSubmit(bMandatory);
 
 		FileChooser fc = new FileChooser();
 		ExtensionFilter filter = new ExtensionFilter("image files ", "*.jpg", "*.png", "*.bmp", "*.dds");
@@ -57,13 +61,14 @@ public class AccountForm extends Form<Account> {
 			public ObjectProperty<File> getProperty() {
 				return p;
 			}
+
 			@Override
 			public Node getGraphic() {
 				return hBox;
 			}
 		};
-		addField("FirstName", fname, true);
-		addField("LastName", lname, true);
+		addField("FirstName", fname, bMandatory);
+		addField("LastName", lname, bMandatory);
 		addField("Image File", valueSupplier);
 		addField("Note", note);
 		Callback<ButtonType, Account> res = new Callback<ButtonType, Account>() {
@@ -77,7 +82,7 @@ public class AccountForm extends Form<Account> {
 				account.setNotes(note.getProperty().get());
 				// TODO
 				File file = p.get();
-				if(file!=null)
+				if (file != null)
 					account.setImageFile(file.getPath());
 				else
 					account.setImageFile("");
@@ -87,12 +92,12 @@ public class AccountForm extends Form<Account> {
 		setResultConverter(res);
 	}
 
-	private AccountForm(long id, String firstname, String lastname, String noteString, LocalDate date) {
-		this(initAccount(id, firstname, lastname, noteString, date));
+	private AccountForm(MainWindow window, long id, String firstname, String lastname, String noteString,
+			LocalDate date) {
+		this(window, initAccount(id, firstname, lastname, noteString, date), false);
 	}
 
-	private static Account initAccount(long id, String firstname, String lastname, String noteString,
-			LocalDate date) {
+	private static Account initAccount(long id, String firstname, String lastname, String noteString, LocalDate date) {
 		Account account = new Account();
 		account.setId(id);
 		account.setDate(date);
