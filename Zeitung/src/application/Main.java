@@ -1,9 +1,9 @@
 package application;
 	
-import dialogs.Log;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import view.Log;
 
 
 public class Main extends Application {
@@ -11,7 +11,7 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		try {
 
-			MainWindow root = new MainWindow();
+			MainWindow root = new MainWindow(primaryStage);
 			
 			Scene scene = new Scene(root);
 			scene.getStylesheets().add(getClass().getResource("zeitung.css").toExternalForm());

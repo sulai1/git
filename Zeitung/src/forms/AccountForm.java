@@ -12,7 +12,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -39,23 +39,29 @@ public class AccountForm extends Form<Account> {
 		note.getProperty().set(account.getNotes());
 		disableSubmit(bMandatory);
 
+		//image file field
+				
+		//property
+		ObjectProperty<File> p = new SimpleObjectProperty<>();
+		//node
 		FileChooser fc = new FileChooser();
 		ExtensionFilter filter = new ExtensionFilter("image files ", "*.jpg", "*.png", "*.bmp", "*.dds");
 		fc.getExtensionFilters().add(filter);
 		fc.setSelectedExtensionFilter(filter);
-		Label label = new Label("file");
+		TextField tf = new TextField("file");
 		Button button = new Button("open");
-		ObjectProperty<File> p = new SimpleObjectProperty<>();
 		button.setOnAction(l -> {
 			File file = fc.showOpenDialog(this.getOwner());
 			if (file == null)
 				return;
 			p.set(file);
-			label.setText(file.getName());
+			tf.setText(file.getName());
 		});
 		HBox hBox = new HBox();
 		hBox.getChildren().add(button);
-		hBox.getChildren().add(label);
+		hBox.getChildren().add(tf);
+		
+		//create value supplier from node and property
 		ValueSupplier<File> valueSupplier = new ValueSupplier<File>() {
 			@Override
 			public ObjectProperty<File> getProperty() {
@@ -81,9 +87,8 @@ public class AccountForm extends Form<Account> {
 				account.setLastname(lname.getProperty().get());
 				account.setNotes(note.getProperty().get());
 				// TODO
-				File file = p.get();
-				if (file != null)
-					account.setImageFile(file.getPath());
+				if (tf.getText() != null)
+					account.setImageFile(tf.getText());
 				else
 					account.setImageFile("");
 				return account;

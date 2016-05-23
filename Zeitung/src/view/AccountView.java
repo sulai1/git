@@ -1,4 +1,4 @@
-package dialogs;
+package view;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -6,13 +6,18 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 import application.MainWindow;
 import forms.AccountForm;
+import fx.controll.TextSupplier;
 import fx.view.SimpleTable;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -25,17 +30,32 @@ public class AccountView extends BorderPane {
 	private static final LocalDateStringConverter DATE_CONV = new LocalDateStringConverter();
 	protected static final BigDecimal maxDiff = BigDecimal.ZERO;
 	private SimpleTable<Account> table;
+	private ObservableList<Account> allitems;
 	private Queue<Long> removed = new PriorityQueue<>();
-	private int count;
+	private Long count = 0L;
 	private VBox bounds;
 	private MainWindow window;
 	private boolean altered = false;
 
+	private final ListChangeListener<Account> changeListener = new ListChangeListener<Account>() {
+		
+		@Override
+		public void onChanged(Change<? extends Account> arg0) {
+			altered = true;
+		}
+	};		
+	
 	public AccountView(MainWindow window) {
 		this.window = window;
 		// create the account table
 		table = new SimpleTable<Account>();
-		table.addColumn("ID", cb -> "" + cb.getId());
+		table.addColumn("ID", cb -> "" + cb.getId(), new Comparator<String>() {
+			
+			@Override
+			public int compare(String o1, String o2) {
+				return Integer.parseInt(o1)-Integer.parseInt(o2);
+			}
+		});
 		table.addColumn("First Name", cb -> cb.getFirstname());
 		table.addColumn("Last Name", cb -> cb.getLastname());
 		table.addColumn("Image File", cb -> {
@@ -52,14 +72,8 @@ public class AccountView extends BorderPane {
 		setCenter(table);
 		initInterface();
 		
-		ListChangeListener<Account> l = new ListChangeListener<Account>() {
-			
-			@Override
-			public void onChanged(Change<? extends Account> arg0) {
-				altered = true;
-			}
-		};
-		table.getItems().addListener(l);
+		allitems = table.getItems();
+		allitems.addListener(changeListener);
 	}
 
 	private void initInterface() {
@@ -73,7 +87,8 @@ public class AccountView extends BorderPane {
 		Button edit = new Button("edit");
 		Button delete = new Button("delete");
 		Button transaction = new Button("transaction");
-
+		Button print = new Button("print");
+		
 		// add button creates a new PersonDialog with a new Person
 		add.setOnAction(c -> {
 			add();
@@ -88,8 +103,23 @@ public class AccountView extends BorderPane {
 		delete.setOnAction(c -> {
 			delete();
 		});
+		
 		transaction.setOnAction(c -> {
 			createTransaction();
+		});
+		
+		print.setOnAction(c -> {
+			print();
+		});
+		
+		TextSupplier search = new TextSupplier();
+		search.getProperty().addListener(c->{
+			String s = search.getProperty().get();
+			if(s.isEmpty())
+				table.setItems(allitems);
+			else{
+				table.setItems(search(s));
+			}
 		});
 
 		// create a box and add the buttons
@@ -97,6 +127,12 @@ public class AccountView extends BorderPane {
 		bounds.getChildren().add(edit);
 		bounds.getChildren().add(delete);
 		bounds.getChildren().add(transaction);
+		bounds.getChildren().add(print);
+		bounds.getChildren().add(search.getGraphic());
+	}
+
+	private void print() {
+		window.getPrintPreview().addAll(table.getSelectionModel().getSelectedItems());
 	}
 
 	private void createTransaction() {
@@ -144,6 +180,16 @@ public class AccountView extends BorderPane {
 			table.getItems().set(index, result);
 	}
 
+	public ObservableList<Account> search(String s) {
+		ObservableList<Account> l = FXCollections.observableArrayList();
+		for(int i=0; i<allitems.size();i++){
+			if(allitems.get(i).contains(s))
+				l.add(allitems.get(i));
+		}
+		l.addListener(changeListener);
+		return l ;
+	}
+	
 	public void saveTable(PrintStream ps) {
 		try {
 			table.store(ps);
@@ -170,7 +216,8 @@ public class AccountView extends BorderPane {
 			table.clear();
 			table.load(br, s->{
 				Account acc = new Account();
-				acc.setId(Long.parseLong(s[0]));
+				long l = Long.parseLong(s[0]);
+				acc.setId(l);
 				acc.setFirstname(s[1]);
 				acc.setLastname(s[2]);
 				acc.setImageFile(s[3]);
@@ -178,6 +225,26 @@ public class AccountView extends BorderPane {
 				acc.setDate(DATE_CONV.fromString(s[5]));
 				return acc;
 			});
+			ArrayList<Long> ids = new ArrayList<>();
+			for(Account a:allitems)
+				ids.add(a.getId());
+			ids.sort((o1,o2) -> {
+				if(o1.longValue()>o2.longValue()) return -1;
+				else if(o1.longValue()<o2.longValue()) return 1;
+				else return 0;
+			});
+			Long maxID = ids.get(0);
+			if(maxID>ids.size()){
+				long nrMissing = maxID-ids.size()-1;
+				int index = 0;
+				for (int i = 0; i < nrMissing; i++) {
+					while(ids.get(index)-1==ids.get(index+1))index++;
+					this.removed.add(ids.get(index)-1);
+					index++;
+				}
+				count = ids.get(0);
+			}else
+				count = allitems.size()+1L;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

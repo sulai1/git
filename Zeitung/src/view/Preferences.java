@@ -1,4 +1,4 @@
-package dialogs;
+package view;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

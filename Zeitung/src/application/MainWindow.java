@@ -12,15 +12,17 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 
-import dialogs.AccountView;
-import dialogs.Preferences;
-import dialogs.TransactionView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
+import view.AccountView;
+import view.Preferences;
+import view.PrintView;
+import view.TransactionView;
 
 public class MainWindow extends BorderPane {
 
@@ -35,9 +37,9 @@ public class MainWindow extends BorderPane {
 	private File traFile = new File(RES_TRA_CSV);
 	
 	private Preferences preferences;
+	private PrintView printPreview;
 	
-	public MainWindow() throws NumberFormatException, IOException, ParseException {
-
+	public MainWindow(Stage primaryStage) throws NumberFormatException, IOException, ParseException {
 		preferences = Preferences.load();
 		// add the account view
 		accountView = new AccountView(this);
@@ -50,10 +52,17 @@ public class MainWindow extends BorderPane {
 		tab = new Tab("Transactions");
 		tab.setContent(transactionView);
 		tabPane.getTabs().add(tab);
+		
+		// add the printview
+		printPreview = new PrintView(primaryStage);
+		tab = new Tab("Print Preview");
+		tab.setContent(printPreview);
+		tabPane.getTabs().add(tab);
+		
 		setCenter(tabPane);
 		initMenu();
 		load();
-	}
+	}	
 
 	boolean altered() {
 		return transactionView.altered() || accountView.altered();
@@ -136,5 +145,12 @@ public class MainWindow extends BorderPane {
 
 	public Preferences preferences() {
 		return preferences;
+	}
+
+	/**
+	 * @return the printPreview
+	 */
+	public PrintView getPrintPreview() {
+		return printPreview;
 	}
 }

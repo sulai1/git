@@ -1,9 +1,9 @@
 package forms;
 
-import dialogs.Preferences;
 import fx.controll.TextSupplier;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
+import view.Preferences;
 
 public class ZTextField extends TextSupplier{
 
